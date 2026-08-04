@@ -61,6 +61,7 @@ make_placeholder() {
   local domain="$1"
   local dir="$LE_ROOT/live/$domain"
   mkdir -p "$dir"
+  umask 077
   openssl req -x509 -newkey rsa:2048 -nodes \
     -keyout "$dir/privkey.pem" -out "$dir/fullchain.pem" \
     -subj "/CN=$domain" -days 1 >/dev/null 2>&1
@@ -120,7 +121,7 @@ done <<< "$DOMAINS"
 
 start_nginx_bg
 
-trap 'nginx -s stop; wait "$NGINX_PID" 2>/dev/null || true' TERM INT
+trap 'nginx -s stop 2>/dev/null || true; wait "$NGINX_PID" 2>/dev/null || true' TERM INT
 
 # issue/renew each domain
 while IFS= read -r d; do

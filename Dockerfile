@@ -1,9 +1,11 @@
 FROM nginx:1.27-bookworm
 
-# Install certbot
+# Install certbot and openssl
 RUN apt-get update \
- && apt-get install -y --no-install-recommends certbot \
+ && apt-get install -y --no-install-recommends certbot openssl \
  && rm -rf /var/lib/apt/lists/*
+
+RUN rm -f /etc/nginx/conf.d/default.conf
 
 # nginx configuration
 COPY nginx/nginx.conf        /etc/nginx/nginx.conf
