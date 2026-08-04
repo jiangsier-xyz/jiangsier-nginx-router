@@ -5,18 +5,18 @@ source "$(dirname "$0")/../lib/parse.sh"
 fail=0
 TMP="$(mktemp -d)"
 
-# The primary domain under test is read from an env var (defaulting to a
-# non-real .test domain) so no real domain is committed to the repo.
-DOMAIN="${TEST_DOMAIN:-app.example.test}"
+# The primary domain under test is read from the TEST_DOMAIN env var
+# (defaulting to a non-real .test domain) so no real domain is committed.
+: "${TEST_DOMAIN:=app.example.test}"
 
 # Fixture: two servers referencing two distinct domains.
 mkdir -p "$TMP/sites-enabled"
 cat > "$TMP/sites-enabled/site.conf" <<EOF
 server {
     listen 443 ssl;
-    server_name $DOMAIN;
-    ssl_certificate     /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+    server_name $TEST_DOMAIN;
+    ssl_certificate     /etc/letsencrypt/live/$TEST_DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$TEST_DOMAIN/privkey.pem;
 }
 server {
     listen 443 ssl;
@@ -27,7 +27,7 @@ server {
 EOF
 
 got="$(extract_domains_from_dir "$TMP/sites-enabled" | sort)"
-want="$(printf '%s\nexample.com' "$DOMAIN" | sort)"
+want="$(printf '%s\nexample.com' "$TEST_DOMAIN" | sort)"
 if [[ "$got" != "$want" ]]; then
   echo "FAIL: expected [$want], got [$got]"; fail=1
 fi
