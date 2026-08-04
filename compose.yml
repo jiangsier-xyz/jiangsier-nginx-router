@@ -1,0 +1,18 @@
+services:
+  nginx-router:
+    build: .
+    image: nginx-router:latest
+    container_name: nginx-router
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      CERTBOT_EMAIL: ${CERTBOT_EMAIL:?CERTBOT_EMAIL must be set}
+      USE_STAGING: ${USE_STAGING:-0}
+    volumes:
+      - ./sites-available:/etc/nginx/sites-available:ro
+      - nginx-router-le:/etc/letsencrypt
+      - ./logs:/var/log/nginx
+
+volumes:
+  nginx-router-le:
