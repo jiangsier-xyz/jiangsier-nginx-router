@@ -1,4 +1,5 @@
-FROM nginx:1.27-bookworm
+ARG NGINX_IMAGE=nginx:stable-bookworm
+FROM ${NGINX_IMAGE}
 
 # Install certbot and openssl
 RUN apt-get update \

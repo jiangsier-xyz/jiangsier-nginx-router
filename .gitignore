@@ -9,3 +9,7 @@ CLAUDE.md
 .env
 logs/
 docs/superpowers/
+
+# Live site configs (real domains/backends) — keep the dir, ignore contents
+sites-available/*
+!sites-available/.gitkeep
