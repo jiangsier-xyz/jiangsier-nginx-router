@@ -1,3 +1,11 @@
+# Claude Code project instructions (kept local)
+CLAUDE.md
+
+# IDE / OS
+.idea/
+.DS_Store
+
+# Local data
 .env
 logs/
 docs/superpowers/
