@@ -8,6 +8,7 @@ CLAUDE.md
 # Local data
 .env
 logs/
+letsencrypt/
 docs/superpowers/
 
 # Live site configs (real domains/backends) — keep the dir, ignore contents

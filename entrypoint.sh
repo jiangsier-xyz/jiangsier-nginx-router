@@ -51,10 +51,18 @@ enable_sites() {
 }
 
 has_real_cert() {
+  # certbot-managed cert: real files + a renewal config
   local domain="$1"
   [[ -f "$LE_ROOT/live/$domain/fullchain.pem" \
      && -f "$LE_ROOT/live/$domain/privkey.pem" \
      && -f "$LE_ROOT/renewal/$domain.conf" ]]
+}
+
+has_cert_files() {
+  # any cert files on disk (managed OR manually placed)
+  local domain="$1"
+  [[ -f "$LE_ROOT/live/$domain/fullchain.pem" \
+     && -f "$LE_ROOT/live/$domain/privkey.pem" ]]
 }
 
 make_placeholder() {
@@ -81,16 +89,18 @@ start_nginx_bg() {
 
 issue_or_renew() {
   local domain="$1"
-  if has_real_cert "$domain"; then
-    log "renew (if due): $domain"
-    certbot renew --cert-name "$domain" --non-interactive
-  else
+  if ! has_cert_files "$domain"; then
     log "issue: $domain"
     # nginx already loaded the placeholder into memory; removing the on-disk
     # files lets certbot create a clean lineage. Safe until we reload.
     rm -f "$LE_ROOT/live/$domain/fullchain.pem" "$LE_ROOT/live/$domain/privkey.pem"
     certbot certonly --webroot -w "$WEBROOT" -d "$domain" \
       --email "$CERTBOT_EMAIL" --agree-tos --non-interactive $STAGING_FLAG
+  elif has_real_cert "$domain"; then
+    log "renew (if due): $domain"
+    certbot renew --cert-name "$domain" --non-interactive
+  else
+    log "manual cert present for $domain — skipping certbot"
   fi
 }
 
@@ -113,10 +123,11 @@ enable_sites
 DOMAINS="$(extract_domains_from_dir "$SITES_ENABLED")"
 log "domains: ${DOMAINS//$'\n'/, }"
 
-# bootstrap placeholders for any domain lacking a real cert
+# bootstrap placeholders for any domain lacking cert files on disk
+# (manually-placed certs are left untouched)
 while IFS= read -r d; do
   [[ -n "$d" ]] || continue
-  has_real_cert "$d" || make_placeholder "$d"
+  has_cert_files "$d" || make_placeholder "$d"
 done <<< "$DOMAINS"
 
 start_nginx_bg

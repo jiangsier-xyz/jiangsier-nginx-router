@@ -56,8 +56,27 @@ domain list is needed.
 | Host path / volume | Container path | Purpose |
 |---|---|---|
 | `./sites-available` | `/etc/nginx/sites-available` | Edit your configs here (read-only in container) |
-| named `nginx-router-le` | `/etc/letsencrypt` | Persistent cert state (live + archive + renewal + accounts) |
+| `./letsencrypt` | `/etc/letsencrypt` | Cert state (live + archive + renewal + accounts). Editable from the host — drop your own certs here (see Manual certs) |
 | `./logs` | `/var/log/nginx` | Access/error logs |
+
+## Manual certs
+
+To use your own certificates instead of (or alongside) Let's Encrypt, place
+them on the host under `./letsencrypt/live/<DOMAIN>/`:
+
+```
+./letsencrypt/live/<DOMAIN>/fullchain.pem
+./letsencrypt/live/<DOMAIN>/privkey.pem
+```
+
+matching the `ssl_certificate` path in your site config. On start, the
+entrypoint detects existing cert files and leaves them untouched — it neither
+overwrites them nor asks certbot to issue/renew for that domain. Domains
+without cert files are still issued/renewed by certbot as usual.
+
+To place certs into a running container instead, the directory is the same
+bind mount, so you can edit files on the host and run
+`docker compose exec nginx-router nginx -s reload`.
 
 ## Environment
 
@@ -71,11 +90,13 @@ domain list is needed.
 On start the entrypoint:
 
 1. Symlinks every file in `sites-available/*` into `sites-enabled/`.
-2. For each domain referenced by an `ssl_certificate` path with no real cert,
-   writes a 1-day self-signed placeholder so nginx can boot.
+2. For each domain referenced by an `ssl_certificate` path with no cert files
+   on disk, writes a 1-day self-signed placeholder so nginx can boot. Domains
+   with existing cert files (managed or manually placed) are left as-is.
 3. Runs `nginx -t`, then starts nginx in the foreground (PID 1).
-4. For each domain, runs `certbot certonly --webroot` (issues if absent) or
-   `certbot renew --cert-name <DOMAIN>` (renews if due).
+4. For each domain: if no cert files exist, runs `certbot certonly --webroot`
+   (issue); if certbot-managed, runs `certbot renew --cert-name <DOMAIN>`
+   (renews if due); if manually placed, skips certbot entirely.
 5. Reloads nginx to pick up real certs.
 6. Starts a background loop running `certbot renew` every 12h, reloading nginx
    on each successful renewal.

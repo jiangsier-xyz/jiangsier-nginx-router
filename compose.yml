@@ -9,8 +9,5 @@ services:
       USE_STAGING: ${USE_STAGING:-0}
     volumes:
       - ./sites-available:/etc/nginx/sites-available:ro
-      - nginx-router-le:/etc/letsencrypt
+      - ./letsencrypt:/etc/letsencrypt
       - ./logs:/var/log/nginx
-
-volumes:
-  nginx-router-le:
