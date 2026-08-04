@@ -21,7 +21,9 @@ automatic Let's Encrypt certificate issuance/renewal.
    ./run.sh
    ```
 
-The container listens on host ports 80 and 443.
+The container runs with `network_mode: host`, so nginx and certbot bind
+directly to the host's interfaces (ports 80 and 443, plus any `listen`
+ports you add in site configs). No port mapping is used.
 
 ## Site-config contract
 

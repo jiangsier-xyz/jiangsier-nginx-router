@@ -3,9 +3,7 @@ services:
     build: .
     image: nginx-router:latest
     container_name: nginx-router
-    ports:
-      - "80:80"
-      - "443:443"
+    network_mode: host
     environment:
       CERTBOT_EMAIL: ${CERTBOT_EMAIL:?CERTBOT_EMAIL must be set}
       USE_STAGING: ${USE_STAGING:-0}
