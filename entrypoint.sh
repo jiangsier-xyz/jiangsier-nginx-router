@@ -120,6 +120,8 @@ done <<< "$DOMAINS"
 
 start_nginx_bg
 
+trap 'nginx -s stop; wait "$NGINX_PID" 2>/dev/null || true' TERM INT
+
 # issue/renew each domain
 while IFS= read -r d; do
   [[ -n "$d" ]] || continue
@@ -130,8 +132,6 @@ nginx -s reload
 log "nginx reloaded with real certs"
 
 start_renewal_loop
-
-trap 'nginx -s stop; wait "$NGINX_PID" 2>/dev/null || true' TERM INT
 
 log "ready"
 wait "$NGINX_PID"
