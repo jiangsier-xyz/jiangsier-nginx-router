@@ -4,10 +4,9 @@ services:
     image: nginx-router:latest
     container_name: nginx-router
     network_mode: host
-    environment:
-      CERTBOT_EMAIL: ${CERTBOT_EMAIL:-}
-      USE_STAGING: ${USE_STAGING:-0}
-      USE_CERTBOT: ${USE_CERTBOT:-1}
+    env_file:
+      - path: .env
+        required: false
     volumes:
       - ./sites-available:/etc/nginx/sites-available:ro
       - ./letsencrypt:/etc/letsencrypt

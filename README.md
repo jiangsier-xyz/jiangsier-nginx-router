@@ -7,12 +7,16 @@ automatic Let's Encrypt certificate issuance/renewal.
 
 1. Put your site configs (regular `.conf` files) in `sites-available/`.
    See `examples/example.conf` for the contract.
-2. Create a `.env` file (or export the var):
+2. Create a `.env` file (loaded by `compose.yml` via `env_file`):
 
    ```
    CERTBOT_EMAIL=you@example.com
    # USE_STAGING=1   # uncomment while testing to avoid LE rate limits
+   # USE_CERTBOT=0   # uncomment to disable certbot entirely (manual certs)
    ```
+
+   Unset vars fall back to the entrypoint defaults (`USE_CERTBOT=1`,
+   `USE_STAGING=0`). `CERTBOT_EMAIL` is required only while `USE_CERTBOT=1`.
 
 3. Build and run:
 
