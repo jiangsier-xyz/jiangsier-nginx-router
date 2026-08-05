@@ -72,7 +72,8 @@ them on the host under `./letsencrypt/live/<DOMAIN>/`:
 matching the `ssl_certificate` path in your site config. On start, the
 entrypoint detects existing cert files and leaves them untouched — it neither
 overwrites them nor asks certbot to issue/renew for that domain. Domains
-without cert files are still issued/renewed by certbot as usual.
+without cert files are still issued/renewed by certbot as usual (unless
+certbot is disabled entirely — see `USE_CERTBOT` below).
 
 To place certs into a running container instead, the directory is the same
 bind mount, so you can edit files on the host and run
@@ -82,24 +83,29 @@ bind mount, so you can edit files on the host and run
 
 | Var | Required | Purpose |
 |---|---|---|
-| `CERTBOT_EMAIL` | yes | Let's Encrypt account email |
+| `CERTBOT_EMAIL` | when `USE_CERTBOT=1` | Let's Encrypt account email |
 | `USE_STAGING` | no | `1` uses the LE staging endpoint (untrusted certs, no rate limits) |
+| `USE_CERTBOT` | no | `1` (default) enables certbot issuance/renewal; `0` disables all certbot activity (manual mode — you must provide certs for every SSL domain) |
 
 ## How it works
 
 On start the entrypoint:
 
 1. Symlinks every file in `sites-available/*` into `sites-enabled/`.
-2. For each domain referenced by an `ssl_certificate` path with no cert files
-   on disk, writes a 1-day self-signed placeholder so nginx can boot. Domains
-   with existing cert files (managed or manually placed) are left as-is.
-3. Runs `nginx -t`, then starts nginx in the foreground (PID 1).
-4. For each domain: if no cert files exist, runs `certbot certonly --webroot`
-   (issue); if certbot-managed, runs `certbot renew --cert-name <DOMAIN>`
-   (renews if due); if manually placed, skips certbot entirely.
-5. Reloads nginx to pick up real certs.
-6. Starts a background loop running `certbot renew` every 12h, reloading nginx
-   on each successful renewal.
+2. (Only when `USE_CERTBOT=1`.) For each domain referenced by an
+   `ssl_certificate` path with no cert files on disk, writes a 1-day
+   self-signed placeholder so nginx can boot. Domains with existing cert
+   files (managed or manually placed) are left as-is.
+3. Runs `nginx -t`, then starts nginx in the foreground (PID 1). With
+   `USE_CERTBOT=0`, every SSL domain must already have cert files or
+   `nginx -t` will fail and the container will exit.
+4. (Only when `USE_CERTBOT=1`.) For each domain: if no cert files exist,
+   runs `certbot certonly --webroot` (issue); if certbot-managed, runs
+   `certbot renew --cert-name <DOMAIN>` (renews if due); if manually
+   placed, skips certbot entirely.
+5. (Only when `USE_CERTBOT=1`.) Reloads nginx to pick up real certs.
+6. (Only when `USE_CERTBOT=1`.) Starts a background loop running
+   `certbot renew` every 12h, reloading nginx on each successful renewal.
 
 Any error exits the container (it does not auto-restart), so failures are
 visible.

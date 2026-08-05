@@ -26,11 +26,16 @@ log() { echo "[entrypoint] $*" >&2; }
 die() { echo "[entrypoint] ERROR: $*" >&2; exit 1; }
 
 # 1. validate env
-: "${CERTBOT_EMAIL:?CERTBOT_EMAIL environment variable is required}"
+USE_CERTBOT="${USE_CERTBOT:-1}"
 STAGING_FLAG=""
-if [[ "${USE_STAGING:-0}" == "1" ]]; then
-  STAGING_FLAG="--staging"
-  log "Using Let's Encrypt STAGING environment"
+if [[ "$USE_CERTBOT" == "1" ]]; then
+  : "${CERTBOT_EMAIL:?CERTBOT_EMAIL is required when USE_CERTBOT=1}"
+  if [[ "${USE_STAGING:-0}" == "1" ]]; then
+    STAGING_FLAG="--staging"
+    log "Using Let's Encrypt STAGING environment"
+  fi
+else
+  log "certbot disabled (USE_CERTBOT=0); provide certs manually under $LE_ROOT/live/<DOMAIN>/"
 fi
 
 # --- helpers ----------------------------------------------------------------
@@ -124,26 +129,32 @@ DOMAINS="$(extract_domains_from_dir "$SITES_ENABLED")"
 log "domains: ${DOMAINS//$'\n'/, }"
 
 # bootstrap placeholders for any domain lacking cert files on disk
-# (manually-placed certs are left untouched)
-while IFS= read -r d; do
-  [[ -n "$d" ]] || continue
-  has_cert_files "$d" || make_placeholder "$d"
-done <<< "$DOMAINS"
+# (manually-placed certs are left untouched). Skipped when certbot is disabled,
+# since placeholders only exist to bootstrap certbot issuance.
+if [[ "$USE_CERTBOT" == "1" ]]; then
+  while IFS= read -r d; do
+    [[ -n "$d" ]] || continue
+    has_cert_files "$d" || make_placeholder "$d"
+  done <<< "$DOMAINS"
+fi
 
 start_nginx_bg
 
 trap 'nginx -s stop 2>/dev/null || true; wait "$NGINX_PID" 2>/dev/null || true' TERM INT
 
-# issue/renew each domain
-while IFS= read -r d; do
-  [[ -n "$d" ]] || continue
-  issue_or_renew "$d"
-done <<< "$DOMAINS"
+# issue/renew each domain, then reload and start the renewal loop.
+# All skipped when certbot is disabled (manual mode).
+if [[ "$USE_CERTBOT" == "1" ]]; then
+  while IFS= read -r d; do
+    [[ -n "$d" ]] || continue
+    issue_or_renew "$d"
+  done <<< "$DOMAINS"
 
-nginx -s reload
-log "nginx reloaded with real certs"
+  nginx -s reload
+  log "nginx reloaded with real certs"
 
-start_renewal_loop
+  start_renewal_loop
+fi
 
 log "ready"
 wait "$NGINX_PID"

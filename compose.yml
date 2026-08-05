@@ -5,8 +5,9 @@ services:
     container_name: nginx-router
     network_mode: host
     environment:
-      CERTBOT_EMAIL: ${CERTBOT_EMAIL:?CERTBOT_EMAIL must be set}
+      CERTBOT_EMAIL: ${CERTBOT_EMAIL:-}
       USE_STAGING: ${USE_STAGING:-0}
+      USE_CERTBOT: ${USE_CERTBOT:-1}
     volumes:
       - ./sites-available:/etc/nginx/sites-available:ro
       - ./letsencrypt:/etc/letsencrypt
