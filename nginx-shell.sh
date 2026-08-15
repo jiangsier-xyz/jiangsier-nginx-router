@@ -2,7 +2,7 @@
 
 set -e
 
-USER=node
+USER=nginx
 if [ "$1" = "--root" ]; then
   USER=root
 fi
