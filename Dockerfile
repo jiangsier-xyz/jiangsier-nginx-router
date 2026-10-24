@@ -18,7 +18,7 @@ COPY lib/parse.sh   /lib/parse.sh
 RUN chmod +x /entrypoint.sh
 
 # Runtime directories
-RUN mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled /var/www/certbot
+RUN mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled /var/www/certbot /var/www/static
 
 # Config a user for web. Pass the username and password by "--build-arg"
 ARG NGINX_USER=nginx_user

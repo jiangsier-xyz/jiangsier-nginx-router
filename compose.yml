@@ -9,5 +9,6 @@ services:
         required: false
     volumes:
       - ./sites-available:/etc/nginx/sites-available:ro
+      - ./static:/var/www/static:ro
       - ./letsencrypt:/etc/letsencrypt
       - ./logs:/var/log/nginx
