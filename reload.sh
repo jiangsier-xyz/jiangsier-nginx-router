@@ -19,6 +19,13 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Non-interactive ssh sessions have a minimal PATH (often just /usr/bin:/bin);
+# append common install dirs so docker can be found.
+for p in /opt/homebrew/bin /usr/local/bin /usr/bin /bin /usr/sbin /sbin; do
+  case ":$PATH:" in *":$p:"*) ;; *) PATH="$PATH:$p" ;; esac
+done
+export PATH
+
 CONTAINER="${1:-nginx-router}"
 
 if [[ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER" 2>/dev/null || echo false)" != "true" ]]; then
