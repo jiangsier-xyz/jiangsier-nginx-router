@@ -10,6 +10,7 @@ CLAUDE.md
 logs/
 letsencrypt/
 docs/superpowers/
+backup/
 
 # Live site configs (real domains/backends) — keep the dir, ignore contents
 sites-available/*
